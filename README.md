@@ -28,8 +28,8 @@ PBM only provides a CLI tool with no REST API or web UI. PBM UI wraps the CLI wi
 ### 1. Clone and configure
 
 ```bash
-git clone <repo-url> pbm_UI
-cd pbm_UI
+git clone https://github.com/zelmario/pbm-ui.git
+cd pbm-ui
 cp .env.example .env
 ```
 
