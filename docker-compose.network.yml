@@ -8,5 +8,5 @@ services:
 
 networks:
   pbm_network:
-    name: ${PBM_DOCKER_NETWORK:-zelmar-anydbver}
+    name: ${PBM_DOCKER_NETWORK:?Set PBM_DOCKER_NETWORK in .env}
     external: true
