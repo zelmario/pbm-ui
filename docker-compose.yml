@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - pbm_data:/app/data
+      - pbm_bins:/app/pbm-bins
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production-use-a-long-random-string}
+      - DEFAULT_ADMIN_USER=${DEFAULT_ADMIN_USER:-admin}
+      - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD:-admin}
+      - DATABASE_URL=sqlite+aiosqlite:///./data/pbm_ui.db
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pbm_data:
+  pbm_bins:
