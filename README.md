@@ -1,6 +1,6 @@
 # PBM UI
 
-Web interface for managing [Percona Backup for MongoDB (PBM)](https://docs.percona.com/percona-backup-mongodb/) on replica set deployments.
+Web interface for managing [Percona Backup for MongoDB (PBM)](https://docs.percona.com/percona-backup-mongodb/) 
 
 <img width="1920" height="954" alt="image" src="https://github.com/user-attachments/assets/a5ea97d6-d0c0-4879-b835-44f2a3956066" />
 
