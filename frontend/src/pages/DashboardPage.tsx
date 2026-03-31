@@ -41,8 +41,15 @@ import { listRestores } from "../api/restores";
 import { setConfig, resyncConfig } from "../api/config";
 import { startRestore, pitrRestore as apiPitrRestore } from "../api/restores";
 
+// PBM ≤2.3.x JSON output leaves role empty for non-primary nodes.
+// Treat empty/missing role as Secondary since PBM reliably marks primaries as "P".
+function normalizeRole(role: string): string {
+  const r = (role || "").toUpperCase();
+  return r === "" ? "S" : r;
+}
+
 function roleName(role: string) {
-  switch (role) {
+  switch (normalizeRole(role)) {
     case "P": return "Primary";
     case "S": return "Secondary";
     case "A": return "Arbiter";
@@ -51,7 +58,7 @@ function roleName(role: string) {
 }
 
 function roleColor(role: string) {
-  switch (role) {
+  switch (normalizeRole(role)) {
     case "P": return "blue";
     case "S": return "gray";
     case "A": return "yellow";
@@ -300,8 +307,10 @@ export function DashboardPage() {
   const pitrRanges = backupList?.pitr?.ranges || [];
   const pitrOn = pitr?.conf || backupList?.pitr?.on || false;
 
-  // Detect if PITR needs a backup: enabled but no usable PITR ranges from pbm list
-  const pitrNeedsBackup = (pitrOn || pitr?.conf) && snapshots.length === 0 && pitrRanges.length === 0;
+  // Detect if PITR needs a backup: either PBM reports an error (e.g. insufficient oplog range)
+  // or PITR is enabled but not running with no usable ranges.
+  const pitrError = pitr?.error || "";
+  const pitrNeedsBackup = (pitrOn || pitr?.conf) && !pitr?.run && (!!pitrError || pitrRanges.length === 0);
   const restores = Array.isArray(restoreList) ? restoreList : [];
 
   const totalNodes = cluster.reduce((a: number, rs: any) => a + (rs.nodes?.length || 0), 0);
@@ -392,7 +401,11 @@ export function DashboardPage() {
           {pitrNeedsBackup ? (
             <Stack gap="xs" mt="xs">
               <Alert color="yellow" variant="light" p="xs" icon={<IconAlertCircle size={14} />}>
-                <Text size="xs">PITR is capturing oplog but without a valid backup the chunks are unusable.</Text>
+                <Text size="xs">
+                  {pitrError
+                    ? "Oplog has insufficient range — records since the last backup are missing. A new backup is needed to create a valid PITR starting point."
+                    : "PITR enabled but not capturing. A new backup is required to start oplog slicing."}
+                </Text>
               </Alert>
               <Button
                 size="xs"
@@ -408,23 +421,6 @@ export function DashboardPage() {
             </Stack>
           ) : pitr?.run ? (
             <Text size="xs" c="green" mt={4} fw={500}>Oplog capture running</Text>
-          ) : (pitrOn || pitr?.conf) && snapshots.length === 0 ? (
-            <Stack gap="xs" mt="xs">
-              <Alert color="yellow" variant="light" p="xs" icon={<IconAlertCircle size={14} />}>
-                <Text size="xs">PITR enabled but not capturing. A new backup is required to start oplog slicing.</Text>
-              </Alert>
-              <Button
-                size="xs"
-                variant="light"
-                color="blue"
-                fullWidth
-                leftSection={<IconArchive size={14} />}
-                loading={quickBackupMutation.isPending}
-                onClick={() => quickBackupMutation.mutate()}
-              >
-                Create backup now
-              </Button>
-            </Stack>
           ) : (pitrOn || pitr?.conf) ? (
             <Text size="xs" c="yellow" mt={4} fw={500}>Starting oplog capture...</Text>
           ) : (
